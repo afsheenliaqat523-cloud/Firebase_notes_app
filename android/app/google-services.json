@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "258545247497",
+    "project_id": "notes-cloud-afsheen-77",
+    "storage_bucket": "notes-cloud-afsheen-77.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:258545247497:android:f2f6e7ad0011389a37dfd8",
+        "android_client_info": {
+          "package_name": "com.example.firebase_notes_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNTaTagnpfkwbCZd-mqvoVqv29CYNi6YY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

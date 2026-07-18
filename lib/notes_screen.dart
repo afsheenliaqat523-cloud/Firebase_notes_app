@@ -43,10 +43,26 @@ class _NotesScreenState extends State<NotesScreen> {
       });
       _titleController.clear();
       _contentController.clear();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving notes: $e')),
-      );
+if (mounted) {
+ScaffoldMessenger.of(context).showSnackBar(
+const SnackBar(content: Text('Note added successfully!'), backgroundColor: Colors.green),
+);
+}
+} on FirebaseException catch (e) {
+// Catches specific Firebase server issues
+if (mounted) {
+ScaffoldMessenger.of(context).showSnackBar(
+SnackBar(content: Text('Firebase Error: ${e.message}'), backgroundColor: Colors.redAccent),
+);
+}
+} catch (e) {
+// Catches generic fallback exceptions
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An unexpected error occurred: $e'),
+              backgroundColor: Colors.redAccent),
+        );
+      }
     }
   }
 

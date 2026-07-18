@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_notes_app/notes_screen.dart';
+import 'package:firebase_notes_app/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_notes_app/firebase_options.dart';
 
@@ -25,24 +26,77 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: StreamBuilder(stream: FirebaseAuth.instance.authStateChanges(),
-          builder: (context,snapshot){
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(body: Center(child: CircularProgressIndicator()));
-            }
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF769826),
+          brightness: Brightness.light,
+          primary: const Color(0xFF769826), // Olive Green
+          primaryContainer: const Color(0xFFA1CB35), // Lime Green
+          secondary: const Color(0xFFFFDE4E), // Warm Yellow
+          tertiary: const Color(0xFFFF9D4D), // Soft Orange
+          surface: Colors.white,
+          background: const Color(0xFFFAFBF8),
+        ),
+        textTheme: const TextTheme(
+          titleLarge: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Color(0xFF2C3E02)),
+          bodyLarge: TextStyle(color: Colors.black87, height: 1.4),
+          bodyMedium: TextStyle(color: Colors.black54),
+        ),
 
-            // 🌟 The Magic Gatekeeper: If snapshot has data, the user is logged in!
-            if (snapshot.hasData) {
-              return const NotesScreen(); // Your actual app screen
-            }
+        // 🏷️ APP BAR STYLE: Flat, clean header with no harsh borders
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          iconTheme: IconThemeData(color: Color(0xFF769826)),
+          titleTextStyle: TextStyle(
+            color: Color(0xFF2C3E02),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        // 💳 CARD STYLE: Standardizes the rounded curves for your list items
+        cardTheme: CardThemeData(
+          color: Colors.white,
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
 
-            // Otherwise, they are logged out. Send them to Login Screen
-            return const LoginScreen();
-          }
-    )
+        // 📥 INPUT FIELD STYLE: Modern, rounded outline text boxes for all forms
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFFFAFBF8),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey[300]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey[200]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF769826), width: 1.5),
+          ),
+        ),
+
+        // 🚀 BUTTON STYLE: Thick, rounded action elements using the new palette
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF769826),
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(48),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 1,
+          ),
+        ),
+
+        ),
+
+      home:SplashScreen()
     );
   }
 }

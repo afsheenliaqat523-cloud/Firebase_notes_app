@@ -1,10 +1,9 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:firebase_notes_app/note_card.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // 👈 Make sure this is here!
+import 'package:image_picker/image_picker.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -30,6 +29,7 @@ class _NotesScreenState extends State<NotesScreen> {
     }
   }
 
+  // ➕ CREATE: Save Note to Firestore
   void addNotes() async {
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
@@ -45,9 +45,92 @@ class _NotesScreenState extends State<NotesScreen> {
       _contentController.clear();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('error saving notes:$e')),
+        SnackBar(content: Text('Error saving notes: $e')),
       );
     }
+  }
+
+  // 📝 UPDATE: Show bottom sheet edit drawer
+  void _showEditingDialogue(String docId, String currentTitle, String currentContent) {
+    final editTitleController = TextEditingController(text: currentTitle);
+    final editContentController = TextEditingController(text: currentContent);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Allows sheet to push above the keyboard
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom, // Avoids keyboard overlap
+            top: 20,
+            left: 20,
+            right: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Edit Note',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 15),
+              TextField(
+                controller: editTitleController,
+                decoration: const InputDecoration(
+                  labelText: 'Title',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: editContentController,
+                decoration: const InputDecoration(
+                  labelText: 'Content',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 15),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final updatedTitle = editTitleController.text.trim();
+                  final updatedContent = editContentController.text.trim();
+
+                  if (updatedTitle.isEmpty || updatedContent.isEmpty) return;
+
+                  try {
+                    // Update document directly using its ID
+                    await fireStore.collection('notes').doc(docId).update({
+                      'title': updatedTitle,
+                      'content': updatedContent,
+                      'lastEdited': FieldValue.serverTimestamp(),
+                    });
+
+                    if (context.mounted) Navigator.pop(context); // Close sheet safely
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Update failed: $e')),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.check),
+                label: const Text('Save Changes'),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    ).then((_) {
+      // Clean up controllers once the modal is closed
+      editTitleController.dispose();
+      editContentController.dispose();
+    });
   }
 
   @override
@@ -60,19 +143,19 @@ class _NotesScreenState extends State<NotesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text("Cloud Notes"),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () => FirebaseAuth.instance.signOut(), // 🌟 Log out instantly!
-            ),
-          ],
-        ),
+      appBar: AppBar(
+        title: const Text("Cloud Notes"),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => FirebaseAuth.instance.signOut(),
+          ),
+        ],
+      ),
       body: Column(
         children: [
-          // 👤 Mock Local Profile Header
+          // 👤 Profile Header
           Container(
             padding: const EdgeInsets.all(12.0),
             color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.2),
@@ -93,7 +176,7 @@ class _NotesScreenState extends State<NotesScreen> {
             ),
           ),
 
-          // 📝 CREATE UI: Input Fields
+          // 📝 Input Fields UI
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -120,7 +203,7 @@ class _NotesScreenState extends State<NotesScreen> {
           ),
           const Divider(),
 
-          // 📖 READ UI: Displaying List from Firestore
+          // 📖 Live Feed Stream
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: fireStore.collection('notes').orderBy('timestamp', descending: true).snapshots(),
@@ -134,17 +217,17 @@ class _NotesScreenState extends State<NotesScreen> {
                 return ListView.builder(
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
+                    final docId = docs[index].id;
                     final data = docs[index].data() as Map<String, dynamic>;
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      child: ListTile(
-                        title: Text(data['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text(data['content'] ?? ''),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.redAccent),
-                          onPressed: () => fireStore.collection('notes').doc(docs[index].id).delete(),
-                        ),
-                      ),
+                    final title = data['title'] ?? '';
+                    final content = data['content'] ?? '';
+
+                    return NoteCard(
+                      title: title,
+                      content: content,
+                      docId: docId,
+                      onDelete: () => fireStore.collection('notes').doc(docId).delete(),
+                      onLongPress: () => _showEditingDialogue(docId, title, content),
                     );
                   },
                 );
